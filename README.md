@@ -3,6 +3,7 @@
 #### Egghead.io Video Series (April 2016)
 - [01 - Let's learn RxJS](https://egghead.io/lessons/rxjs-let-s-learn-rxjs?series=rxjs-beyond-the-basics-creating-observables-from-scratch#/tab-transcript)
 - [02 - Observables are almost like Functions](https://egghead.io/lessons/rxjs-observables-are-almost-like-functions)
+- [03 - Observables (push) compared to generator functions (pull)](https://egghead.io/lessons/rxjs-observables-push-compared-to-generator-functions-pull)
 
 ## 01 - Let's learn RxJS
 
@@ -166,3 +167,72 @@ These values happened between the sandwich of these calls, but the value 300 was
 In functions, you can't really return multiple times. That doesn't work. Also, it's kind of cheating to return an array, because still, you are returning one value, and that value is the array. **The fundamental difference between functions and observables are that observables can return you multiple values.**
 
 When you .call on a function, you're basically saying, give me a value immediately, and just one value. But when you're saying .subscribe on an observable, you're saying, give me values. I don't know, maybe they come immediately. Maybe it's just one. Maybe they are asynchronous. That is basically the difference. It's like a powerful generalization of a function.
+
+## 03 - Observables (push) compared to generator functions (pull)
+
+*Observables are almost like functions, but allow you to return many values. There is another concept in JavaScript (ES6), called Generator Functions, which do something very similar. In this lesson we will see what Observables and Generators have in common, and how they differ.*
+
+We just saw how observables are almost like functions but allow you to return many values. There's another concept in JavaScript called generator functions, which do something very similar. Generator functions were added in ECMAScript 2015, so they're a relatively new feature. Basically, they allow you to return multiple values as well.
+
+This is how we would create one. We say function bas, but after the function keyword, we'll put a star. That's to indicate that this function can give many values. I'm also going to comment out these codes so they don't interfere with our output. Then I'm going to create console log, as we had before. I'm going to yield a value, which is the generator style of giving a value.
+
+Then I'm going to yield more values. This is sort of like return, but we're going to see how it's different. This is also a lazy computation, so nothing will happen until we ask for these values. The way we do that is by getting an iterator when calling this function bas. Once we have that iterator, we can get values from that by saying next value. Once I do that, it will give me the next value, sort of.
+
+```javascript
+//Generator
+function* baz() {
+  console.log('Hello');
+  yield 42;
+  yield 100;
+  yield 200; // did not get logged
+}
+
+var iterator = baz();
+console.log(iterator.next().value);
+console.log(iterator.next().value);
+```
+```
+> Hello
+> 42
+> 100
+```
+
+If we run this, we see hello 42 and 100. It executed this side effect. Then it gave me the value 42 and 100, but it didn't give me 200. That's because the generator function is allowed to pause its execution. For instance, here it paused on 100. That's because you need to explicitly pull out the values from this generator function by saying iterator next. That's why I need to put yet another iterator next here to get the third value out, like that.
+
+How does that differ from observables? You need to look at the observable here as a producer of values. Also, this part here is the consumer of those values. With the generator function, this is producing many values, and this part here is consuming those values. The difference is that with observables, the producer determines when the values are sent and with generators, the consumer determines when the values are sent.
+
+```javascript
+// Observable (PUSH)
+// Producer - determines when the values are sent
+var bar = Rx.Observable.create(function(observer) {
+  console.log('Hello');
+  observer.next(42);
+  observer.next(100);
+  observer.next(200);
+  setTimeout(function() {
+    observer.next(300);
+  });
+});
+// Consumer
+bar.subscribe(function(x) {
+  console.log(x);
+})
+
+
+// Generator (PULL)
+// Producer
+function* baz() {
+  console.log('Hello');
+  yield 42;
+  yield 100;
+  yield 200;
+}
+// Consumer - determines when the values are sent
+var iterator = baz();
+console.log(iterator.next().value);
+console.log(iterator.next().value);
+```
+
+The first style is generally called push, and the second style is generally called pull. Observables are more useful for sequences of values that are sort of alive, such as setting a timeout or setting an interval to run every second to deliver values or click events. It doesn't make sense to put a set interval inside a generator function, because the values won't be necessarily sent every one second. You would need to put the set interval on the consumer side, like that.
+
+Generator functions are more useful as a passive factory of values. For instance, you can think of the Fibonacci sequence, right? Let's keep in mind that with observables, the values are pushed from the producer, and with generators, the values are pulled from the consumer.
