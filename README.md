@@ -5,7 +5,8 @@
 - [02 - Observables are almost like Functions](https://egghead.io/lessons/rxjs-observables-are-almost-like-functions)
 - [03 - Observables (push) compared to generator functions (pull)](https://egghead.io/lessons/rxjs-observables-push-compared-to-generator-functions-pull)
 - [04 - Observables can throw errors](https://egghead.io/lessons/rxjs-observables-can-throw-errors)
-}
+- [05 - Observables can complete](https://egghead.io/lessons/rxjs-observables-can-complete)
+- [06 - Creation operator: of()](https://egghead.io/lessons/rxjs-creation-operator-of)
 
 ## 01 - Let's learn RxJS
 
@@ -70,6 +71,7 @@ function foo() {
 
 console.log(foo.call());
 ```
+
 ```
 > "Hello"
 > 42
@@ -91,6 +93,7 @@ bar subscribe(function(x) {
   console.log(x);
 })
 ```
+
 ```
 > "Hello"
 > 42
@@ -126,6 +129,7 @@ bar.subscribe(function(x) {
 })
 console.log('after');
 ```
+
 ```
 > before
 > Hello
@@ -154,6 +158,7 @@ bar.subscribe(function(x) {
 })
 console.log('after');
 ```
+
 ```
 > before
 > Hello
@@ -193,6 +198,7 @@ var iterator = baz();
 console.log(iterator.next().value);
 console.log(iterator.next().value);
 ```
+
 ```
 > Hello
 > 42
@@ -289,3 +295,139 @@ bar.subscribe(function nextValueHandler(x) {
 ```
 
 And that is generally the strategy for handling errors in observables.
+
+## 05 - Observables can complete
+
+*The Observer object has the functions next() and error(). In this lesson we will see the other (and last) function available on observers, complete(), and its purpose.*
+
+So far, we've seen that observers are the consumers of values that observable produces. Observers seem to have at least two functions attached to them. They have next to get values. They have error to get an exception. What else does this observer object include? It also has complete, which takes no value or error. It has zero arguments.
+
+Observer.complete allows a producer, this observable, to tell its consumers that it has finished. It won't deliver any values anymore. In the subscribe here, we can add a third handler, the complete handler, which also takes no arguments. Here, we can detect when the observable ended.
+
+```javascript
+/ Observable
+var bar = Rx.Observable.create(function(observer) {
+  try {
+    console.log('Hello');
+    observer.next(42);
+    observer.next(100);
+    observer.next(200);
+    observer.complete();
+    setTimeout(function() {
+      observer.next(300);
+    });
+  } catch (err) {
+    observer.error(err);
+  }
+});
+
+bar.subscribe(
+  function nextValueHandler(x) {
+    console.log(x);
+  },
+  function errorHandler(err) {
+    console.log('Something wrong happened: ' + err);
+  },
+  function completeHandler() {
+    console.log('done');
+  }  
+);
+```
+
+```
+> Hello
+> 42
+> 100
+> 200
+"done"
+```
+
+
+When you run this, you see hello, 42, 100, and 200, and done, because after 200 we told observable that we're done. That's why this delivery of a value here didn't happen, because we have completed already. I could have also put the complete here so that we're only going to be done after 300 is delivered.
+
+```javascript
+/ Observable
+var bar = Rx.Observable.create(function(observer) {
+  try {
+    console.log('Hello');
+    observer.next(42);
+    observer.next(100);
+    observer.next(200);
+    setTimeout(function() {
+      observer.next(300);
+      observer.complete();
+    });
+  } catch (err) {
+    observer.error(err);
+  }
+});
+
+bar.subscribe(
+  function nextValueHandler(x) {
+    console.log(x);
+  },
+  function errorHandler(err) {
+    console.log('Something wrong happened: ' + err);
+  },
+  function completeHandler() {
+    console.log('done');
+  }  
+);
+```
+
+```
+> Hello
+> 42
+> 100
+> 200
+> 300
+"done"
+```
+
+Completion is an important concept, as we will see later on. Imagine if you want to concatenate two observables. You can only do that if the first one ends. Then you know that the second observable takes over after that.
+
+Completion is also important in other ways. For instance, let's say that observer is only interested in the last value that observable produced. This last can only be determined if there is a way to know that the observable has finished and won't deliver any values anymore.
+
+In conclusion, **that's all an observable can do. It can deliver values, pushing them to observers. It can deliver errors. It can deliver a completion notification.**
+
+## 06 - Creation operator: of()
+
+*RxJS is a lot about the so-called "operators". We will learn most of the important operators, one by one. In this lesson, we will see our first creation operator: of().*
+
+Now we know the very basics of the observable type. But RXJS is a lot about the so-called 'operators'. If you check the documentation, there are many, many operators available out there. The list is long, but there are actually a reasonable amount of operators that are important to know. That's why this course here exists.
+
+We're going to start by looking at the creation operators. These are essentially a static function on the observable type. The observable there has 'of', and 'from', and 'create', etc. We're going to start by looking at 'of'. It's a common pattern to produce a sequence of values, this sequence being synchronous -- we saw like that.
+
+Remember, when we had varbar equals our 'x' observable, create the function with observer. Then we delivered observer 'next 42', and then we delivered observer 'next 100', then '200', and then 'complete'.
+
+This is a quite common pattern. We just wanted to leave these values and then stop. 'Of' does precisely that. It just allows you to deliver '42', '100', and '200' synchronously, so that is much less much boilerplate to write than the second one here. It does essentially the same, if we now consume this observable by subscribing to it, we get the next value on handler.
+
+Here it says, next is 'x'. Then we have an error handler, so on 'error of error', and then it has the completion handler. Here we say, 'done on the console log.'
+
+```javascript
+var foo = Rx.Observable.of(42, 100, 200);
+
+// var bar = Rx.Observable.create(function(observer) {
+//   observer.next(42);
+//   observer.next(100);
+//   observer.next(200);
+//   observer.complete();
+// })
+
+foo.subscribe(function(x) {
+  console.log('next ' + x);
+}, function(err) {
+  console.log('error ' + err);
+}, function () {
+  console.log('done')
+});
+```
+
+```
+> "next 42"
+> "next 100"
+> "next 200"
+> "done"
+```
+
+If you run this, we see '42', '100' and '200', and done. That's what 'of' is about. If you want to deliver synchronous values in the sequence, you use 'of' instead of writing this boilerplate.
