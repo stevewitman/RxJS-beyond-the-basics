@@ -4,6 +4,8 @@
 - [01 - Let's learn RxJS](https://egghead.io/lessons/rxjs-let-s-learn-rxjs?series=rxjs-beyond-the-basics-creating-observables-from-scratch#/tab-transcript)
 - [02 - Observables are almost like Functions](https://egghead.io/lessons/rxjs-observables-are-almost-like-functions)
 - [03 - Observables (push) compared to generator functions (pull)](https://egghead.io/lessons/rxjs-observables-push-compared-to-generator-functions-pull)
+- [04 - Observables can throw errors](https://egghead.io/lessons/rxjs-observables-can-throw-errors)
+}
 
 ## 01 - Let's learn RxJS
 
@@ -236,3 +238,54 @@ console.log(iterator.next().value);
 The first style is generally called push, and the second style is generally called pull. Observables are more useful for sequences of values that are sort of alive, such as setting a timeout or setting an interval to run every second to deliver values or click events. It doesn't make sense to put a set interval inside a generator function, because the values won't be necessarily sent every one second. You would need to put the set interval on the consumer side, like that.
 
 Generator functions are more useful as a passive factory of values. For instance, you can think of the Fibonacci sequence, right? Let's keep in mind that with observables, the values are pushed from the producer, and with generators, the values are pulled from the consumer.
+
+## 04 - Observables can throw errors
+
+*Whenever we are writing code, we need to remember that things may go wrong. If an error happens in a function, that error will be thrown. Errors can also happen in Observables, and in this lesson we will see what is the API for throwing and catching them.*
+
+Whenever we are writing code, we need to remember that things may go wrong. If an error happens inside a function, like here, that error will be thrown, and it will start bubbling up the stack of function calls. That's why it's generally a good idea to wrap function calls with a try/catch block to handle the error, and then other code can continue running.
+
+```javascript
+// Function
+function foo() {
+  console.log('Hello');
+  throw new Error('invalid something');
+  return 42;
+}
+try {
+  console.log(foo.call());
+} catch (err) {
+  console.log('Something wrong happened: ' + err);
+}
+```
+
+So what about with observables? Of course, things may go wrong inside observable code, and we need to be able to handle errors, so how do we throw errors from an observable? The answer is rather simple: we use observer.error. And this allows us to sort of deliver an error. The API here is similar to observer.next; essentially, instead of delivering a value, we are delivering an error. And then to catch those errors, we need to modify the code here for the consumers that subscribe.
+
+If we would name this first function, I would give it the name 'next value handler'. And then 'subscribe' also accepts another function, which is the error handler. So this is similar to the catch block, and here we can do something like this: something went wrong, which is this error.
+
+So if you are using the observable.create API, it's generally a good idea to wrap this code in a try/catch block, and then inside the catch, you can send this error to the observer, like such.
+
+```javascript
+// Observable
+var bar = Rx.Observable.create(function(observer) {
+  try {
+    console.log('Hello');
+    observer.next(42);
+    observer.next(100);
+    observer.next(200);
+    setTimeout(function() {
+      observer.next(300);
+    });
+  } catch (err) {
+    observer.error(err);
+  }
+});
+
+bar.subscribe(function nextValueHandler(x) {
+  console.log(x);
+}, function errorHandler(err) {
+  console.log('Something wrong happened: ' + err);
+});
+```
+
+And that is generally the strategy for handling errors in observables.
