@@ -33,7 +33,7 @@ Now we are in JS Bin, and here we have RxJS version 5 imported.
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://npmcdn.com/@reactivex/rxjs@5.0.0-beta.1/dist/global/Rx.umd.js"></script>
+    <script src="https://unpkg.com/@reactivex/rxjs@5.0.0-beta.1/dist/global/Rx.umd.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>JS Bin</title>
